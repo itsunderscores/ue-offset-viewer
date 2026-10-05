@@ -68,7 +68,6 @@ flowchart LR
 ## Quick start (Windows)
 
 ```powershell
-cd sdkviewer-github
 .\releases\windows-amd64\sdkviewer.exe -file sample-sdk.txt -open
 ```
 
@@ -108,29 +107,61 @@ cp /path/to/sdk.txt .
 
 ## Ubuntu server (systemd)
 
-From Windows, cross-compile and pack deploy files:
+The installer expects **one folder on the server** containing:
+
+| File | From this repo |
+| --- | --- |
+| `sdkviewer` (Linux binary) | `releases/linux-amd64/sdkviewer` |
+| `install-ubuntu.sh` | `deploy/install-ubuntu.sh` |
+| `sdkviewer.service` | `deploy/sdkviewer.service` |
+| `offsets.json` | `offsets.json` (edit on the server) |
+| `sdk.txt` | **your** dump (not in the repo) |
+
+### Upload from Windows (PowerShell)
+
+```powershell
+$SERVER = "user@YOUR-SERVER-IP"
+$DIR = "C:\path\to\sdk-viewer"   # clone of this repo
+
+scp "$DIR\releases\linux-amd64\sdkviewer" `
+    "$DIR\deploy\install-ubuntu.sh" `
+    "$DIR\deploy\sdkviewer.service" `
+    "$DIR\offsets.json" `
+    "${SERVER}:~/sdkviewer/"
+
+scp "C:\path\to\your\sdk.txt" "${SERVER}:~/sdkviewer/"
+```
+
+Use **binary** transfer in WinSCP/FileZilla so `install-ubuntu.sh` does not get Windows line endings (`bash\r` errors). If that happens on the server: `sed -i 's/\r$//' install-ubuntu.sh sdkviewer.service`.
+
+### Install on the server
+
+```bash
+cd ~/sdkviewer
+chmod +x sdkviewer install-ubuntu.sh
+sudo ./install-ubuntu.sh
+```
+
+This installs to `/opt/sdkviewer`, enables `sdkviewer.service` on port **1336**, and opens **1336/tcp** in `ufw` or firewalld if present. Browse `http://SERVER-IP:1336`.
+
+After you ship a **new binary** (UI is embedded — replacing `sdk.txt` alone does not update the web UI):
+
+```bash
+sudo install -m 755 ~/sdkviewer/sdkviewer /opt/sdkviewer/sdkviewer
+sudo chown sdkviewer:sdkviewer /opt/sdkviewer/sdkviewer
+sudo systemctl restart sdkviewer
+curl -s http://127.0.0.1:1336/api/stats   # must include "ui_build":"…"
+```
+
+### Rebuild the Linux binary yourself (optional)
+
+From a machine with Go installed:
 
 ```powershell
 .\build-linux.bat
 ```
 
-Upload `dist\linux\` to the server, then:
-
-```bash
-cd ~/sdkviewer
-chmod +x install-ubuntu.sh
-sudo ./install-ubuntu.sh
-```
-
-Installs to `/opt/sdkviewer`, enables `sdkviewer.service` on port **1336**, opens firewall if `ufw`/`firewalld` is present.
-
-After updating **only the binary** (UI is inside the exe):
-
-```bash
-sudo install -m 755 ./sdkviewer /opt/sdkviewer/sdkviewer
-sudo systemctl restart sdkviewer
-curl -s http://127.0.0.1:1336/api/stats   # should include "ui_build":"…"
-```
+That writes a ready-to-upload bundle under `dist/linux/` (binary + copied deploy files + `offsets.json` if present). Upload **that folder** the same way as above, or copy `dist/linux/sdkviewer` into `releases/linux-amd64/` for a release commit.
 
 ### Domain + Cloudflare
 
@@ -181,14 +212,18 @@ Deep links: `#/ClassName`, `#/ClassName/FieldName`, `#/!important/group/Name`.
 
 ---
 
-## Build both release binaries
+## Build both release binaries (maintainers)
 
 ```powershell
-.\build-windows.bat
-.\build-linux.bat
+.\build-windows.bat          # → releases\windows-amd64\sdkviewer.exe
+.\build-linux.bat             # → dist\linux\  (upload bundle; not committed)
 ```
 
-Linux output is under `dist/linux/` (installer bundle). Copy `dist/linux/sdkviewer` into `releases/linux-amd64/` when cutting a GitHub release, or use the copy already in `releases/`.
+Refresh the committed Linux binary after a UI change:
+
+```powershell
+copy /y dist\linux\sdkviewer releases\linux-amd64\sdkviewer
+```
 
 ---
 
