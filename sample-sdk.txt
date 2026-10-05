@@ -1,0 +1,10 @@
+namespace ExampleActor {
+    inline uint64_t RootComponent = 0x1B0; // USceneComponent*
+    inline uint64_t Health = 0x2A0; // float
+    inline uint64_t bIsDead = 0x2A4; // bool
+}
+
+namespace ExamplePawn {
+    inline uint64_t Mesh = 0x2F0; // USkeletalMeshComponent*
+    inline uint64_t PlayerState = 0x2A8; // APlayerState*
+}

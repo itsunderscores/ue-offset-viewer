@@ -1,0 +1,23 @@
+[Unit]
+Description=SDK Viewer (UE offset dump browser)
+After=network.target
+
+[Service]
+Type=simple
+User=sdkviewer
+Group=sdkviewer
+WorkingDirectory=/opt/sdkviewer
+ExecStart=/opt/sdkviewer/sdkviewer -addr 0.0.0.0:1336 -file /opt/sdkviewer/sdk.txt -offsets /opt/sdkviewer/offsets.json
+Restart=on-failure
+RestartSec=2
+
+# Hardening: the service can only read its own directory. Nothing on the web can write
+# to sdk.txt or offsets.json; edit those files on the server and they reload automatically.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadOnlyPaths=/opt/sdkviewer
+
+[Install]
+WantedBy=multi-user.target
