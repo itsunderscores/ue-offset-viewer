@@ -1,5 +1,7 @@
 # SDK Viewer
 
+**Live demo:** [https://underscores.dev/](https://underscores.dev/) — full UI on a real dump (search, classes, Important Offsets, mobile layout).
+
 Single Go binary with an embedded web UI for browsing Unreal Engine SDK offset dumps: C++-style `namespace Class { inline uint64_t Field = 0x…; // Type }` files, optional JSON export, full-text search, and a read-only **Important Offsets** panel driven by `offsets.json`.
 
 Prebuilt binaries (no Go required):
